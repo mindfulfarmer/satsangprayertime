@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Satsang Prayer</title>
+    
+    <meta name="theme-color" content="#d69e2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;700&family=Tiro+Bangla&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-body: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-main: #2d3748;
+            --text-sub: #718096;
+            --accent: #d69e2e;
+            --accent-dark: #b7791f;
+            --accent-light: #fefcbf;
+            --shadow-soft: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+            --radius: 20px;
+        }
+
+        /* Dark Mode Variables */
+        body.dark-mode {
+            --bg-body: #171923;
+            --bg-card: #2d3748;
+            --text-main: #f7fafc;
+            --text-sub: #a0aec0;
+            --shadow-soft: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            margin: 0;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 60px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .font-hindi { font-family: 'Tiro Devanagari Hindi', serif; }
+        .font-bangla { font-family: 'Tiro Bangla', serif; }
+
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Added general gap for layout comfort */
+        }
+
+        /* --- STICKY HEADER --- */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-body);
+            padding-top: 15px;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid transparent;
+            transition: 0.3s;
+        }
+
+        .header-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 5px 5px;
+        }
+        .app-title { font-size: 1.5rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+        .header-actions { display: flex; gap: 15px; }
+        .header-icon-btn { background:none; border:none; font-size:1.4rem; cursor:pointer; opacity:0.6; transition:0.3s; color: var(--text-main); }
+        
+        /* --- CLOCK & SUN DATA --- */
+        .live-clock-container {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 25px; /* Increased spacing */
+        }
+        .clock-label {
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--text-sub); margin-bottom: 5px; opacity: 0.8;
+        }
+        .live-clock {
+            font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums;
+            letter-spacing: -1px; color: var(--text-main); line-height: 1.1;
+        }
+        .live-date {
+            font-size: 0.9rem; color: var(--text-sub); font-weight: 500;
+            margin-top: 5px;
+        }
+        .sun-data-grid {
+            display: flex; justify-content: center; gap: 20px;
+            margin-top: 12px; font-size: 0.85rem; color: var(--text-sub);
+            font-weight: 600;
+        }
+        .sun-item { display: flex; align-items: center; gap: 6px; }
+
+        /* Carousel */
+        .fav-carousel {
+            display: flex; gap: 12px; overflow-x: auto; 
+            padding: 5px 5px 15px 5px; scrollbar-width: none;
+            margin: 0 -20px; padding-left: 25px; 
+            margin-bottom: 10px; /* Spacing below carousel */
+        }
+        .fav-carousel::-webkit-scrollbar { display: none; }
+        
+        .chip {
+            background: var(--bg-card);
+            padding: 8px 20px; border-radius: 50px;
+            font-size: 0.85rem; font-weight: 600;
+            color: var(--text-sub); box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            white-space: nowrap; cursor: pointer;
+            border: 1px solid transparent; transition: all 0.2s ease;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .chip.active {
+            background: var(--text-main); color: var(--bg-body);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Search Input - Smaller Width */
+        .search-box-container {
+            overflow: hidden; max-height: 0; transition: max-height 0.3s ease-out;
+            display: flex; justify-content: center; /* Center the input */
+        }
+        .search-box-container.open { max-height: 80px; margin-bottom: 15px; margin-top: 5px; }
+        .search-input {
+            width: 90%; max-width: 320px; /* Smaller width */
+            padding: 14px 20px; border-radius: 50px; border: none;
+            background: var(--bg-card); box-shadow: var(--shadow-soft);
+            font-family: inherit; font-size: 0.95rem; color: var(--text-main);
+            outline: none; box-sizing: border-box; text-align: center;
+        }
+
+        /* --- MAIN CARD --- */
+        .main-card {
+            border-radius: 30px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px; /* Increased spacing */
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            color: white;
+        }
+
+        .main-card.morning {
+            background: linear-gradient(135deg, #FF9966 0%, #FF5E62 100%);
+            box-shadow: 0 20px 40px -10px rgba(255, 94, 98, 0.4);
+        }
+        .main-card.evening {
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            box-shadow: 0 20px 40px -10px rgba(24, 40, 72, 0.5);
+        }
+
+        .card-settings-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); border: none; border-radius: 50%;
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer; color: white; backdrop-filter: blur(5px);
+        }
+
+        .prayer-label {
+            text-transform: uppercase; letter-spacing: 3px; font-size: 0.75rem; 
+            color: rgba(255,255,255,0.9); font-weight: 700; margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .prayer-time {
+            font-size: 4rem; font-weight: 700; color: white;
+            line-height: 1; margin: 10px 0; letter-spacing: -2px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .prayer-loc {
+            font-size: 1.1rem; color: rgba(255,255,255,0.95);
+            margin-bottom: 30px; display: flex; justify-content: center; align-items: center; gap: 6px;
+        }
+
+        /* Toggle */
+        .toggle-container {
+            background: rgba(255,255,255,0.2); border-radius: 100px;
+            padding: 6px; display: inline-flex; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .toggle-btn {
+            padding: 10px 24px; border-radius: 100px; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; color: white; transition: all 0.3s;
+        }
+        .toggle-btn.active {
+            background: white; 
+            color: #000000; /* High Contrast Black */
+            font-weight: 800; /* Bolder */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .alarm-btn {
+            margin-top: 25px; padding: 10px 24px; border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.6); background: rgba(0,0,0,0.1);
+            color: white; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-left: auto; margin-right: auto; width: fit-content;
+            backdrop-filter: blur(4px);
+        }
+        .alarm-btn.active {
+            background: white; color: var(--accent); border-color: white;
+        }
+
+        /* Date Strip */
+        .date-strip {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding: 10px 5px 20px 5px; margin-bottom: 25px; /* Increased spacing */
+            scrollbar-width: none;
+        }
+        .date-strip::-webkit-scrollbar { display: none; }
+        
+        .date-item {
+            min-width: 70px; height: 50px; background: transparent;
+            border-radius: 14px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid var(--text-sub);
+            color: var(--text-sub); opacity: 0.7;
+            flex-shrink: 0;
+        }
+        .date-item.active {
+            background: var(--text-main); border-color: var(--text-main);
+            color: var(--bg-body); transform: scale(1.05); opacity: 1;
+        }
+        .d-day { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; }
+
+        /* Lyrics */
+        .lyrics-section {
+            background: var(--bg-card); border-radius: 30px;
+            padding: 40px 25px; box-shadow: var(--shadow-soft);
+            margin-bottom: 40px;
+        }
+        .lyric-title { text-align: center; font-size: 1.8rem; color: var(--accent); font-weight: 700; }
+        .lyric-sub { text-align: center; font-size: 0.9rem; color: var(--text-sub); margin-bottom: 40px; font-style: italic; }
+        .stanza-block { margin-bottom: 40px; text-align: center; }
+        .stanza-num { display: inline-block; font-size: 0.8rem; color: var(--text-sub); border-bottom: 1px solid var(--text-sub); margin-bottom: 15px; opacity: 0.5; }
+        .verse { font-size: 1.25rem; line-height: 1.6; color: var(--text-main); margin-bottom: 20px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px); z-index: 999;
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-card {
+            background: var(--bg-card); width: 85%; max-width: 320px;
+            padding: 30px; border-radius: 24px; color: var(--text-main);
+        }
+        .offset-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #718096; }
+        .btn-circle { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--bg-body); color: var(--text-main); font-weight: bold; cursor: pointer; }
+        .save-btn { width: 100%; padding: 15px; background: var(--text-main); color: var(--bg-body); border: none; border-radius: 15px; font-weight: 600; margin-top: 20px; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div class="sticky-header">
+        <div class="header-row">
+            <div class="app-title">Satsang Prayer</div>
+            <div class="header-actions">
+                <button class="header-icon-btn" onclick="toggleTheme()" title="Toggle Theme">🌗</button>
+                <button class="header-icon-btn" onclick="toggleSearch()" title="Search City">🔍</button>
+            </div>
+        </div>
+        
+        <div class="search-box-container" id="searchContainer">
+            <input type="text" class="search-input" id="cityInput" 
+                   placeholder="City name..." 
+                   onkeypress="if(event.key==='Enter') searchLocation()">
+        </div>
+    </div>
+
+    <div class="live-clock-container">
+        <div class="clock-label">Current Time</div>
+        <div class="live-clock" id="liveClock"> -- : -- : -- </div>
+        <div class="live-date" id="liveDate"></div>
+        
+        <div class="sun-data-grid">
+            <div class="sun-item">
+                <span>🌅</span> <span id="valSunrise">--:--</span>
+            </div>
+            <div class="sun-item">
+                <span>🌇</span> <span id="valSunset">--:--</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="fav-carousel" id="favCarousel"></div>
+
+    <div class="date-strip" id="dateStrip"></div>
+
+    <div class="main-card morning" id="prayerCard">
+        <button class="card-settings-btn" onclick="toggleModal(true)">⚙️</button>
+
+        <div class="prayer-label" id="mainLabel">NEXT PRAYER</div>
+        <div class="prayer-time" id="mainTime">--:--</div>
+        
+        <div class="prayer-loc">
+            <span id="locIcon">📍</span>
+            <span id="mainCity">Detecting Location...</span>
+        </div>
+
+        <div class="toggle-container">
+            <div class="toggle-btn active" id="btnMorning" onclick="setMode('morning')">Morning</div>
+            <div class="toggle-btn" id="btnEvening" onclick="setMode('evening')">Evening</div>
+        </div>
+
+        <button id="alarmBtn" class="alarm-btn" onclick="toggleAlarm()">
+            🔔 Set Alarm
+        </button>
+    </div>
+
+    <div class="lyrics-section">
+        <div class="lyric-title" id="lyricsTitle">Title</div>
+        <div class="lyric-sub" id="lyricsSub">Subtitle</div>
+        <div id="lyricsContent"></div>
+    </div>
+
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+        <h3>Time Adjustment</h3>
+        <p style="font-size:0.9rem; color:var(--text-sub); margin-bottom:20px;">
+            Customize times for <strong id="modalCityName">City</strong>
+        </p>
+
+        <div class="offset-row">
+            <span>Morning Offset</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button class="btn-circle" onclick="adjustOffset('morning', -1)">-</button>
+                <span style="font-weight:bold; width:20px; text-align:center" id="dispMOff">0</span>
+                <button class="btn-circle" onclick="adjustOffset('morning', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="offset-row" style="border:none">
+            <span>Evening Offset</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button class="btn-circle" onclick="adjustOffset('evening', -1)">-</button>
+                <span style="font-weight:bold; width:20px; text-align:center" id="dispEOff">0</span>
+                <button class="btn-circle" onclick="adjustOffset('evening', 1)">+</button>
+            </div>
+        </div>
+
+        <button class="save-btn" onclick="toggleModal(false)">Done</button>
+        <div style="text-align:center; margin-top:15px;">
+            <span onclick="resetDefaults()" style="color:#e53e3e; font-size:0.8rem; cursor:pointer">Reset to Defaults</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- TEXT DATA ---
+    const TEXTS = {
+        morning: {
+            title: "Pratar-Minati",
+            sub: "Morning Prayer",
+            sections: [
+                {
+                    title: "I",
+                    verses: [
+                        "राधास्वामी नाम। जो गावे, सोई तरे॥\nकलकलेश सब नाश। सुख पावे सब दुःख हरे॥१॥",
+                        "ऐसा नाम अपार। कोई भेद न जानई॥\nजो जाने सो पार। बहुरि न जग में जनमई ॥ २ ॥",
+                        "राधास्वामी गायकर। जनम सुफल करले।\nयही नाम निज नाम है। मन अपने धरले॥ ३ ॥",
+                        "बैठक स्वामी अद्भुती। राधा निरख निहार ॥\nऔर न कोई लख सके। शोभा अगम अपार ॥ ४ ॥",
+                        "गुप्त रूप जहाँ धारिया। राधास्वामी नाम ॥\nबिना मेहर नहिं पावई। जहाँ कोई विश्राम ॥ ५ ॥",
+                        "करूँ बंदगी राधास्वामी आगे॥ जिन् परतापं जीव बहु जागे ॥ ६॥\nबारम्बार करूँ परनाम। सत्गुरु पदम धाम सतनाम ॥ ७ ॥",
+                        "आदि अनादि जुगादि अनाम।संत स्वरूप छोड़ निज धाम ॥ ८ ॥\nआये भौजल नाव लगाई। हमसे जीवन लिया चढ़ाई ॥ ९ ॥",
+                        "शब्द दृढ़ाया सुरत बताई।करम भरम से लिया बचाई ॥ १० ॥\nकोटि कोटि करुं वन्दना।अरब खरब दंडौत॥",
+                        "राधास्वामी मिल गये।खुला भक्ति का सोत॥ ११ ॥\nभक्ति सुनाई सबसे न्यारी।वेद कतेब न ताहि बिचारी॥ १२ ॥",
+                        "सत्तपुरुष चौथे पद बासा।संतन क़ा वहाँ सदा बिलासा॥ १३ ॥\nसो घर दरसाया गुरु पूरे।बीन बजे जहँ अचरज तुरे॥ १४ ॥",
+                        "आगे अलख पुरुष दरबारा।देखा जाय सुरत से सारा ॥ १५ ॥\nतिस पर अगम लोक इक न्यारा।संत सुरत कोई करत विहारा ॥",
+                        "तहाँ से दरसे अटल अटारी।अद्भुत राधास्वामी महल सँवारी ॥ १७ ॥\nसुरत हुई अतिकर मगनानी।पुरुष अनामी जाय समानी ॥ १८ ॥",
+                        "---------------------पुनः------------------\nकरूँ बंदगी राधास्वामी आगे॥जिन् परतापं जीव बहु जागे ॥ ६ ॥\nबारम्बार करूँ परनाम।सत्गुरु पदम धाम सतनाम ॥ ७ ॥\n(करूँ बंदगी राधास्वामी आगे॥)"
+                    ]
+                },
+                {
+                    title: "II",
+                    verses: [
+                        "बार बार कर जोड़ कर। सविनय करूँ पुकार॥\nसाध संग मोहि देव नित। परम गुरु दातार ॥ १ ॥",
+                        "कृपासिंधु समरथ पुरुष। आदि अनादि अपार॥\nराधास्वामी परम पितु। मैं तुम सदा अधार ॥ २ ॥",
+                        "बार बार बल जाऊँ। तनमन वारुं चरण पर ॥\nक्या मुखले मैं गाउँ। मेहर करी जस कृपा कर ॥ ३॥",
+                        "धन्य धन्य गुरुदेव। दयासिंधु पूरण धनी॥\nनित करूँ तुम सेव। अचल भक्ति मोहि देव प्रभु ॥४॥",
+                        "दीन अधीन अनाथ। हाथ गहा तुम आन कर ॥\nअब राखो नित साथ। दीन दयाल कृपानिधि ॥ ५ ॥",
+                        "काम क्रोध मद लोभ। सब विधि अवगुण हार मैं ॥\nप्रभु राखो मेरी लाज। तुम द्वारे अब मैं पड़ा ॥ ६ ॥",
+                        "राधास्वामी गुरु समरथ। तुम बिन और न दुसरा॥\nअब करो दया प्रत्यक्ष। तुम दर एती विलंब क्यों ॥७॥",
+                        "दया करो मेरे साईयां। देव प्रेम की दात ॥\nदुख सुख कछु व्यापे नहीं। छूटे सब उत्पात ॥ ८ ॥"
+                    ]
+                },
+                {
+                    title: "III",
+                    verses: [
+                        "गुरुर्ब्रह्मा गुरुर्विष्णु गुरुर्देवो महेश्वरः।\nगुरुरेव परम ब्रह्म तस्मै श्रीगुरवे नमः॥",
+                        "अखण्डमण्डलाकारं व्याप्तं येन चराचरम्।\nतत्पदं दर्शितं येन तस्मै श्रीगुरवे नमः॥",
+                        "अज्ञानतिमिरान्धस्य ज्ञानाञ्जन-शलाकया।\nचक्षुरून्मीलितं येन तस्मै श्रीगुरवे नमः॥",
+                        "स्थावरंजंगमं व्याप्तं येन कृत्स्नं चराचरम्।\nतत्पदं दर्शितं येन तस्मै श्रीगुरवे नमः ॥",
+                        "चिद्रुपेण परिव्याप्तं त्रैलोक्यं सचराचरम्।\nतत्पदं दर्शितं येन तस्मै श्रीगुरवे नमः॥",
+                        "न गुरोरधिकं तत्त्वं न गुरोरधिकं तपः।\nतत्त्वज्ञानात परं नास्ति तस्मै श्रीगुरवे नमः ॥",
+                        "मन्नाथः श्रीजगन्नाथो मद्गुरू: श्रीजगद्गुरः।\nमदात्मा संर्वभूतात्मा तस्मै श्रीगुरवे नमः॥",
+                        "गुरुरादिरनादिश्च गुरुः परमदैवतम्।\nगुरोः परतरं नास्ति तस्मै श्रीगुरवे नमः ॥",
+                        "ब्रह्मानन्दं परमसुखदं केवलं ज्ञानमूर्त्तिम्।\nद्वन्द्वातीतं गगनसदृशं तत्त्वमस्यादि लक्ष्यम्॥",
+                        "एकंनित्यं विमलमचलं सर्वधीसाक्षीभूतम्।\nभावातीतं त्रिगुणरहितं सत्गुरुं त्वां नमामि ॥"
+                    ]
+                },
+                {
+                    title: "IV",
+                    verses: [
+                        "জয় রাধে রাধে কৃষ্ণ কৃষ্ণ, গোবিন্দ গোবিন্দ বলো রে!\nরাধে গোবিন্দ! গোবিন্দ! গোবিন্দ! গোবিন্দ!",
+                        "গোবিন্দ বলে সদা ডাকো রে!\nছাড়ো রে মন কপট চাতুরি, বদনে বলো হরি হরি!",
+                        "হরি নাম পরমব্রহ্ম জীবেরই মূল ধর্ম!\nঅধর্ম কুকর্ম ছাড়ো রে।",
+                        "ছাড়ো রে মন ভবেরই আশা, অজপা নামে করো রে নেশা!\nরাধে গোবিন্দ নামটি বদনে লয়ে!",
+                        "নয়ন-নীরে সদা ভাসো রে।\nহরি বোল! হরি বোল! হরি বোল! হরি বোল!",
+                        "রাধা বোল! রাধা বোল! রাধা বোল! রাধা বোল!"
+                    ]
+                }
+            ]
+        },
+        evening: {
+            title: "Sandhya-Minati",
+            sub: "Evening Prayer",
+            sections: [
+                {
+                    title: "I",
+                    verses: [
+                        "बार बार करूँ विनती। राधास्वामी आगे॥\nदया करो दाता मेरे। चित चरणन लागे ॥१॥",
+                        "जन्म जन्म रही भूल में। नहिं पाया भेदा ॥\nकाल करम के जाल में। रहि भोगत खेदा ॥ २ ॥",
+                        "जगत जीव भरमत फिरें। नित चारों खानी॥\nज्ञानी जोगी पिल रहे। सब मन की घानी ॥ ३ ॥",
+                        "भाग जगा मेरा आदिका। मिले सतगुरु आई।\nराधास्वामी धाम का। मोहि भेद जनाई ॥ ४ ॥",
+                        "ऊँच से ऊँचा देश है। वह अधर ठिकानी ।।\nबिना संत पावे नहीं। श्रुत शब्द निशानी ॥ ५ ॥",
+                        "राधास्वामी नाम की। मोहिं महिमा सुनाई ॥\nविरह अनुराग जगाय के। घर पहुँचूँ भाई ॥ ६ ॥",
+                        "साध संग कर सार रस। मैंने पिया अघाई ॥\nप्रेम लगा गुरु चरण में। मन शांति न आई ॥ ७ ॥",
+                        "तड़प उठे बेकल रहूँ। कस पिया घर जाई ॥\nदर्शन रस नित नित लंहूँ। गहे मन थिरताई ॥ ८ ॥",
+                        "सुरत चढ़े आकाश में। करे शब्द बिलासा ॥\nधाम धाम निरखत चले। पावे निज घर वासा ॥९॥",
+                        "यह आशा मेरे मन बसे । रहे चित्त उदासा ॥\nविनय सुनो किरपा करो। दीजे चरण निवासा ॥१०॥",
+                        "तुम बिन कोई समरथ नहीं । जासे माँगू दाना ॥\nप्रेमधार बरखा करो। खोलो अमृत खाना ॥ ११ ॥",
+                        "दीन दयाल दया करो। मेरे समरथ स्वामी॥\nशुकर करूँ गावत रहुँ। नित राधास्वामी ॥ १२ ॥"
+                    ]
+                },
+                {
+                    title: "II",
+                    verses: [
+                        "बार बार कर जोड़ कर। सविनय करूँ पुकार॥\nसाध संग मोहि देव नित। परम गुरु दातार ॥ १ ॥",
+                        "कृपासिंधु समरथ पुरुष। आदि अनादि अपार॥\nराधास्वामी परम पितु। मैं तुम सदा अधार ॥ २ ॥",
+                        "बार बार बल जाऊँ। तनमन वारुं चरण पर ॥\nक्या मुखले मैं गाउँ। मेहर करी जस कृपा कर ॥ ३॥",
+                        "धन्य धन्य गुरुदेव। दयासिंधु पूरण धनी॥\nनित करूँ तुम सेव। अचल भक्ति मोहि देव प्रभु ॥४॥",
+                        "दीन अधीन अनाथ। हाथ गहा तुम आन कर ॥\nअब राखो नित साथ। दीन दयाल कृपानिधि ॥ ५ ॥",
+                        "काम क्रोध मद लोभ। सब विधि अवगुण हार मैं ॥\nप्रभु राखो मेरी लाज। तुम द्वारे अब मैं पड़ा ॥ ६ ॥",
+                        "राधास्वामी गुरु समरथ। तुम बिन और न दुसरा॥\nअब करो दया प्रत्यक्ष। तुम दर एती विलंब क्यों ॥७॥",
+                        "दया करो मेरे साईयां। देव प्रेम की दात ॥\nदुख सुख कछु व्यापे नहीं। छूटे सब उत्पात ॥ ८ ॥"
+                    ]
+                },
+                {
+                    title: "III",
+                    verses: [
+                        "गुरुर्ब्रह्मा गुरुर्विष्णु गुरुर्देवो महेश्वरः।\nगुरुरेव परम ब्रह्म तस्मै श्रीगुरवे नमः॥",
+                        "अखण्डमण्डलाकारं व्याप्तं येन चराचरम्।\nतत्पदं दर्शितं येन तस्मै श्रीगुरवे नमः॥",
+                        "अज्ञानतिमिरान्धस्य ज्ञानाञ्जन-शलाकया।\nचक्षुरून्मीलितं येन तस्मै श्रीगुरवे नमः॥",
+                        "स्थावरंजंगमं व्याप्तं येन कृत्स्नं चराचरम्।\nतत्पदं दर्शितं येन तस्मै श्रीगुरवे नमः ॥",
+                        "चिद्रुपेण परिव्याप्तं त्रैलोक्यं सचराचरम्।\nतत्पदं दर्शितं येन तस्मै श्रीगुरवे नमः॥",
+                        "न गुरोरधिकं तत्त्वं न गुरोरधिकं तपः।\nतत्त्वज्ञानात परं नास्ति तस्मै श्रीगुरवे नमः ॥",
+                        "मन्नाथः श्रीजगन्नाथो मद्गुरू: श्रीजगद्गुरः।\nमदात्मा संर्वभूतात्मा तस्मै श्रीगुरवे नमः॥",
+                        "गुरुरादिरनादिश्च गुरुः परमदैवतम्।\nगुरोः परतरं नास्ति तस्मै श्रीगुरवे नमः ॥",
+                        "ब्रह्मानन्दं परमसुखदं केवलं ज्ञानमूर्त्तिम्।\nद्वन्द्वातीतं गगनसदृशं तत्त्वमस्यादि लक्ष्यम्॥",
+                        "एकंनित्यं विमलमचलं सर्वधीसाक्षीभूतम्।\nभावातीतं त्रिगुणरहितं सत्गुरुं त्वां नमामि ॥"
+                    ]
+                },
+                {
+                    title: "IV",
+                    verses: [
+                        "জয় রাধে রাধে কৃষ্ণ কৃষ্ণ, গোবিন্দ গোবিন্দ বলো রে!\nরাধে গোবিন্দ! গোবিন্দ! গোবিন্দ! গোবিন্দ!",
+                        "গোবিন্দ বলে সদা ডাকো রে!\nছাড়ো রে মন কপট চাতুরি, বদনে বলো হরি হরি!",
+                        "হরি নাম পরমব্রহ্ম জীবেরই মূল ধর্ম!\nঅধর্ম কুকর্ম ছাড়ো রে।",
+                        "ছাড়ো রে মন ভবেরই আশা, অজপা নামে করো রে নেশা!\nরাধে গোবিন্দ নামটি বদনে লয়ে!",
+                        "নয়ন-নীরে সদা ভাসো রে।\nহরি বোল! হরি বোল! হরি বোল! হরি বোল!",
+                        "রাধা বোল! রাধা বোল! রাধা বোল! রাধা বোল!"
+                    ]
+                }
+            ]
+        }
+    };
+
+    // --- STATE MANAGEMENT ---
+    const DEFAULTS = { mOff: 0, eOff: 0 };
+    
+    const PRESETS = [
+        { name: "Bongaigaon", lat: 26.47, lon: 90.56 },
+        { name: "Deoghar", lat: 24.48, lon: 86.69 },
+        { name: "Guwahati", lat: 26.14, lon: 91.73 },
+        { name: "Delhi", lat: 28.61, lon: 77.20 }
+    ];
+
+    let state = {
+        currentLoc: { name: "Detecting...", lat: 0, lon: 0, id: "gps", isGps: true },
+        customLocations: [],
+        locations: {}, // offsets
+        selectedDate: new Date(),
+        viewMode: 'morning',
+        darkMode: false,
+        alarmActive: false, 
+        currentPrayerTime: null 
+    };
+
+    const alarmSound = new Audio("data:audio/wav;base64,UklGRl9vT1BXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
+
+    // --- INITIALIZATION ---
+    window.onload = () => {
+        const saved = localStorage.getItem('satsang_v11_plus');
+        if(saved) {
+            state = JSON.parse(saved);
+            state.selectedDate = new Date(state.selectedDate);
+            if(isNaN(state.selectedDate)) state.selectedDate = new Date();
+            state.alarmActive = false;
+        } else {
+            detectGPS(true);
+        }
+
+        if(state.darkMode) document.body.classList.add('dark-mode');
+
+        renderFavorites();
+        initMonthStrip();
+        startClock();
+        
+        if(!saved) {
+            const hr = new Date().getHours();
+            setMode(hr >= 12 ? 'evening' : 'morning');
+        }
+        
+        if(state.currentLoc.isGps) detectGPS(true);
+        else updateUI();
+    };
+
+    function save() {
+        localStorage.setItem('satsang_v11_plus', JSON.stringify(state));
+        updateUI();
+    }
+
+    // --- HELPER: SCROLL TO ACTIVE ---
+    function scrollToActive(containerId) {
+        const container = document.getElementById(containerId);
+        if(!container) return;
+        
+        const activeEl = container.querySelector('.active');
+        if(activeEl) {
+            activeEl.scrollIntoView({
+                behavior: 'smooth',
+                inline: 'center',
+                block: 'nearest'
+            });
+        }
+    }
+
+    // --- THEME & CLOCK ---
+    function toggleTheme() {
+        state.darkMode = !state.darkMode;
+        document.body.classList.toggle('dark-mode');
+        save();
+    }
+
+    function startClock() {
+        function tick() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
+            document.getElementById('liveDate').innerText = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            if(state.alarmActive && state.currentPrayerTime) {
+                if (now.getHours() === state.currentPrayerTime.getHours() && 
+                    now.getMinutes() === state.currentPrayerTime.getMinutes() &&
+                    now.getSeconds() === 0) {
+                    
+                    alarmSound.play().catch(e => console.log("Audio play failed", e));
+                    alert("Prayer Time!");
+                    toggleAlarm(); 
+                }
+            }
+        }
+        tick();
+        setInterval(tick, 1000);
+    }
+
+    function toggleAlarm() {
+        state.alarmActive = !state.alarmActive;
+        const btn = document.getElementById('alarmBtn');
+        if(state.alarmActive) {
+            btn.classList.add('active');
+            btn.innerHTML = "🔔 Alarm Active";
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = "🔔 Set Alarm";
+        }
+    }
+
+    function toggleSearch() {
+        const el = document.getElementById('searchContainer');
+        el.classList.toggle('open');
+        if(el.classList.contains('open')) {
+            setTimeout(() => document.getElementById('cityInput').focus(), 100);
+        }
+    }
+
+    // --- LOCATION LOGIC ---
+    function renderFavorites() {
+        const strip = document.getElementById('favCarousel');
+        strip.innerHTML = '';
+
+        const gpsDiv = document.createElement('div');
+        gpsDiv.className = `chip ${state.currentLoc.isGps ? 'active' : ''}`;
+        gpsDiv.innerHTML = '📍 Current Location';
+        gpsDiv.onclick = () => detectGPS();
+        strip.appendChild(gpsDiv);
+
+        const allLocs = [...PRESETS, ...state.customLocations];
+        const unique = allLocs.filter((v,i,a) => a.findIndex(t => t.name === v.name) === i);
+
+        unique.forEach(loc => {
+            const div = document.createElement('div');
+            const isActive = (!state.currentLoc.isGps && state.currentLoc.name === loc.name);
+            div.className = `chip ${isActive ? 'active' : ''}`;
+            div.innerText = loc.name;
+            div.onclick = () => {
+                state.currentLoc = { ...loc, id: loc.name.toLowerCase().replace(/\s/g, '_'), isGps: false };
+                save();
+                renderFavorites();
+            };
+            strip.appendChild(div);
+        });
+
+        // Trigger Auto Scroll
+        setTimeout(() => scrollToActive('favCarousel'), 50);
+    }
+
+    async function detectGPS(silent = false) {
+        if(!silent) document.getElementById('mainCity').innerText = "Locating...";
+        
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            let name = "Current Location";
+
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                const data = await res.json();
+                name = data.address.city || data.address.town || data.address.district || data.address.county || name;
+            } catch(e) { console.error(e); }
+
+            state.currentLoc = { name: name, lat: lat, lon: lon, id: "gps", isGps: true };
+            save();
+            renderFavorites();
+
+        }, err => {
+            if(!silent) alert("GPS unavailable. Please select a city.");
+            if(state.currentLoc.lat === 0) {
+                state.currentLoc = { ...PRESETS[0], id: 'bongaigaon', isGps: false };
+                save();
+            }
+        });
+    }
+
+    async function searchLocation() {
+        const q = document.getElementById('cityInput').value;
+        if(!q) return;
+
+        try {
+            document.getElementById('mainCity').innerText = "Searching...";
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+
+            if(data.length > 0) {
+                const item = data[0];
+                const name = item.display_name.split(',')[0]; 
+                
+                const newLoc = { name: name, lat: parseFloat(item.lat), lon: parseFloat(item.lon) };
+                
+                state.customLocations = state.customLocations.filter(l => l.name !== name); 
+                state.customLocations.unshift(newLoc);
+                if(state.customLocations.length > 5) state.customLocations.pop();
+
+                state.currentLoc = { ...newLoc, id: name.toLowerCase().replace(/\s/g, '_'), isGps: false };
+                
+                save();
+                renderFavorites();
+                document.getElementById('cityInput').value = "";
+                toggleSearch(); 
+            } else {
+                alert("City not found");
+            }
+        } catch(e) {
+            alert("Connection error");
+        }
+    }
+
+    // --- CALCULATION LOGIC ---
+    function updateUI() {
+        const offsets = state.locations[state.currentLoc.id] || { ...DEFAULTS };
+        const times = SunCalc.getTimes(state.selectedDate, state.currentLoc.lat, state.currentLoc.lon);
+
+        const mTime = new Date(times.sunrise.getTime() + (offsets.mOff * 60000));
+        const eTime = new Date(times.sunset.getTime() + (offsets.eOff * 60000));
+
+        document.getElementById('valSunrise').innerText = formatTime(times.sunrise);
+        document.getElementById('valSunset').innerText = formatTime(times.sunset);
+
+        const isEve = state.viewMode === 'evening';
+        const displayTime = isEve ? eTime : mTime;
+
+        state.currentPrayerTime = displayTime;
+
+        document.getElementById('mainTime').innerText = formatTime(displayTime);
+        document.getElementById('mainCity').innerText = state.currentLoc.name;
+        document.getElementById('mainLabel').innerText = isEve ? "EVENING PRAYER" : "MORNING PRAYER";
+
+        // Toggles
+        document.getElementById('btnMorning').className = `toggle-btn ${!isEve ? 'active' : ''}`;
+        document.getElementById('btnEvening').className = `toggle-btn ${isEve ? 'active' : ''}`;
+
+        // Background Logic
+        const card = document.getElementById('prayerCard');
+        if(isEve) {
+            card.classList.remove('morning');
+            card.classList.add('evening');
+        } else {
+            card.classList.remove('evening');
+            card.classList.add('morning');
+        }
+
+        renderLyrics(isEve ? TEXTS.evening : TEXTS.morning);
+
+        document.getElementById('modalCityName').innerText = state.currentLoc.name;
+        document.getElementById('dispMOff').innerText = offsets.mOff;
+        document.getElementById('dispEOff').innerText = offsets.eOff;
+        
+        if(state.alarmActive) toggleAlarm();
+    }
+
+    function renderLyrics(data) {
+        document.getElementById('lyricsTitle').innerText = data.title;
+        document.getElementById('lyricsSub').innerText = data.sub;
+        
+        const container = document.getElementById('lyricsContent');
+        container.innerHTML = '';
+
+        data.sections.forEach(sec => {
+            const div = document.createElement('div');
+            div.className = 'stanza-block';
+            div.innerHTML = `<span class="stanza-num">Section ${sec.title}</span>`;
+            
+            sec.verses.forEach(v => {
+                const isBangla = /[\u0980-\u09FF]/.test(v);
+                const fontClass = isBangla ? 'font-bangla' : 'font-hindi';
+                div.innerHTML += `<div class="verse ${fontClass}">${v.replace(/\n/g, '<br>')}</div>`;
+            });
+            container.appendChild(div);
+        });
+    }
+
+    function formatTime(date) {
+        let h = date.getHours();
+        let m = date.getMinutes();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        m = m < 10 ? '0'+m : m;
+        return `${h}:${m} ${ampm}`;
+    }
+
+    function setMode(mode) {
+        state.viewMode = mode;
+        updateUI();
+    }
+
+    // --- MONTH SELECTOR ---
+    function initMonthStrip() {
+        const strip = document.getElementById('dateStrip');
+        strip.innerHTML = '';
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        const currentDate = new Date(state.selectedDate);
+
+        months.forEach((m, i) => {
+            const el = document.createElement('div');
+            const isSel = currentDate.getMonth() === i;
+            
+            el.className = `date-item ${isSel ? 'active' : ''}`;
+            el.innerHTML = `<span class="d-day">${m}</span>`;
+            
+            el.onclick = () => {
+                const newDate = new Date();
+                newDate.setMonth(i);
+                newDate.setDate(1); 
+                state.selectedDate = newDate;
+                
+                initMonthStrip();
+                updateUI();
+                save();
+            };
+            strip.appendChild(el);
+        });
+
+        setTimeout(() => scrollToActive('dateStrip'), 50);
+    }
+
+    // --- SETTINGS ---
+    function toggleModal(show) {
+        document.getElementById('settingsModal').style.display = show ? 'flex' : 'none';
+    }
+
+    function adjustOffset(type, val) {
+        const id = state.currentLoc.id;
+        if(!state.locations[id]) state.locations[id] = { ...DEFAULTS };
+        if(type === 'morning') state.locations[id].mOff += val;
+        else state.locations[id].eOff += val;
+        save();
+    }
+
+    function resetDefaults() {
+        const id = state.currentLoc.id;
+        if(state.locations[id]) delete state.locations[id];
+        save();
+        toggleModal(false);
+    }
+</script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker registered', reg))
+                .catch(err => console.log('Service Worker registration failed', err));
+        });
+    }
+</script>
+</body>
+</html>
